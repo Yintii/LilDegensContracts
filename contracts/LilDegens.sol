@@ -9,6 +9,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 interface ILilDegenCoin {
     function burn(address _from, uint256 _amount) external;
     function updateReward(address _from, address _to) external;
+    function transfer(address to, uint256 value) external returns (bool);
+    function balanceOf(address who) external view returns (uint256);
+
 }
 
 contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
@@ -36,7 +39,8 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
 
     ILilDegenCoin public LilDegenCoin;
 
-    uint256 public constant NAME_CHANGE_PRICE = 150 ether;
+
+    uint256 public constant NAME_CHANGE_PRICE = 150;
 
     mapping(uint256 => LilDegenData) public lilDegenData;
 
@@ -53,6 +57,7 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         maxPerAddressDuringMint = maxBatchSize_;
         price = mintPrice_;
     }
+
 
     function changeName(uint256 LilDegenId, string memory newName)
         external
@@ -116,26 +121,12 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         address to,
         uint256 tokenId
     ) public override {
-        if (tokenId < maxSupply) {
+        if (tokenId < maxSupply && isContract(to) == false) {
             LilDegenCoin.updateReward(from, to);
             genBalance[from]--;
             genBalance[to]++;
         }
         ERC721A.transferFrom(from, to, tokenId);
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory data
-    ) public override {
-        if (tokenId < maxSupply) {
-            LilDegenCoin.updateReward(from, to);
-            genBalance[from]--;
-            genBalance[to]++;
-        }
-        ERC721A.safeTransferFrom(from, to, tokenId, data);
     }
 
     function pause() public onlyOwner {
@@ -166,4 +157,13 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     function numberMinted(address owner) public view returns (uint256) {
         return _numberMinted(owner);
     }
+
+    function isContract(address _address) internal returns (bool) {
+        uint codeSize;
+        assembly {
+            codeSize := extcodesize(_address)
+        }
+        return codeSize > 0;
+    }
+
 }

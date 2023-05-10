@@ -11,6 +11,7 @@ interface iLilDegens {
 contract LilDegenCoin is ERC20, Ownable {
     iLilDegens public LilDegens;
 
+    // won't neeed this constant with the staking contract
     uint256 public constant BASE_RATE = 7 ether;
     uint256 public START;
     bool rewardPaused = false;
@@ -20,28 +21,10 @@ contract LilDegenCoin is ERC20, Ownable {
 
     mapping(address => bool) public allowedAddresses;
 
-    constructor(address LilDegensAddress) ERC20("LilDegenCoin", "LDGC") {
+    constructor(address LilDegensAddress, uint256 initialSupply) ERC20("LilDegenCoin", "LDGC") {
         LilDegens = iLilDegens(LilDegensAddress);
         START = block.timestamp;
-    }
-
-    function updateReward(address from, address to) external {
-        require(msg.sender == address(LilDegens));
-        if (from != address(0)) {
-            rewards[from] += getPendingReward(from);
-            lastUpdate[from] = block.timestamp;
-        }
-        if (to != address(0)) {
-            rewards[to] += getPendingReward(to);
-            lastUpdate[to] = block.timestamp;
-        }
-    }
-
-    function claimReward() external {
-        require(!rewardPaused, "Claiming reward has been paused");
-        _mint(msg.sender, rewards[msg.sender] + getPendingReward(msg.sender));
-        rewards[msg.sender] = 0;
-        lastUpdate[msg.sender] = block.timestamp;
+        _mint(msg.sender, initialSupply);
     }
 
     function burn(address user, uint256 amount) external {
@@ -50,22 +33,6 @@ contract LilDegenCoin is ERC20, Ownable {
             "Address does not have permission to burn"
         );
         _burn(user, amount);
-    }
-
-    function getTotalClaimable(address user) external view returns (uint256) {
-        return rewards[user] + getPendingReward(user);
-    }
-
-    //this will need to be altered so that
-    //it is getting data from the staked contract
-    //on how long that the tokens have been staked to the contract
-    function getPendingReward(address user) internal view returns (uint256) {
-        return
-            (LilDegens.genBalance(user) *
-                BASE_RATE *
-                (block.timestamp -
-                    (lastUpdate[user] >= START ? lastUpdate[user] : START))) /
-            86400;
     }
 
     function setAllowedAddresses(address _address, bool _access)
@@ -77,5 +44,23 @@ contract LilDegenCoin is ERC20, Ownable {
 
     function toggleReward() public onlyOwner {
         rewardPaused = !rewardPaused;
+    }
+
+    function updateReward(address transferFrom, address transferTo) external {
+        require(msg.sender == address(LilDegens), "Unauthorized caller");
+        uint256 transferAmount = balanceOf(transferFrom);
+        if (transferAmount > 0 && !rewardPaused) {
+            uint256 elapsedTime = block.timestamp - START;
+            uint256 reward = (transferAmount * BASE_RATE * elapsedTime) / (365 days);
+            rewards[transferTo] += reward;
+            lastUpdate[transferTo] = block.timestamp;
+        }
+    }
+
+    
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        require(recipient != address(0), "ERC20: transfer to zero address");
+        _transfer(_msgSender(), recipient, amount);
+        return true;
     }
 }

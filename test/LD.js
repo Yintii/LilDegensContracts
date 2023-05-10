@@ -7,6 +7,8 @@ describe("LilDegens Contract", function () {
     let lilDegens;
     let LilDegenCoin;
     let lilDegenCoin;
+    let LilDegenStake;
+    let lilDegenStake;
 
     beforeEach(async function () {
         LilDegens = await ethers.getContractFactory("LilDegens");
@@ -21,9 +23,17 @@ describe("LilDegens Contract", function () {
 
 
         LilDegenCoin = await ethers.getContractFactory("LilDegenCoin");
-        lilDegenCoin = await LilDegenCoin.deploy(lilDegens.address);
+        lilDegenCoin = await LilDegenCoin.deploy(lilDegens.address, 1_000_000_000);
 
         await lilDegenCoin.deployed();
+
+
+
+        LilDegenStake = await ethers.getContractFactory("LilDegenStake");
+        lilDegenStake = await LilDegenStake.deploy(lilDegens.address, lilDegenCoin.address);
+
+        await lilDegenStake.deployed();
+
 
 
     });
@@ -245,7 +255,7 @@ describe("LilDegens Contract", function () {
     });
 
     describe("changeName()", function(){
-        it("should allow for you to rename the token", async () => {
+        it("should not allow for you to rename the token if you don't have any ERC20", async () => {
             const [owner, user1] = await ethers.getSigners();
 
             await lilDegens
@@ -256,16 +266,115 @@ describe("LilDegens Contract", function () {
                 .connect(user1)
                 .mint(1, {value: priceInWei})
             
-            await lilDegenCoin
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .changeName(0, "DudeMan McGoophy");
+
+                expect.fail("This was supposed to fail due to a lack of balance")
+            } catch (error) {
+                expect(error.message)
+                    .to
+                    .equal("VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
+            }
+        })
+
+        it("should allow for you to rename the token if you DO have enough ERC20", async () => {
+            const [owner, user1] = await ethers.getSigners();
+
+
+            await lilDegens
+                .connect(owner)
+                .setLilDegenCoin(lilDegenCoin.address);
+
+
+            await lilDegens
                 .connect(user1)
-                .claimReward()
+                .mint(1, { value: priceInWei })
+                
+            await lilDegenCoin
+                .connect(owner)
+                .transfer(user1.address, 150);
+            
+            let theBal = await lilDegenCoin.balanceOf(user1.address);
+
+            expect(theBal).to.equal(150);
 
             await lilDegens
                 .connect(user1)
                 .changeName(0, "DudeMan McGoophy");
+            
+        })
+
+        it("should not allow for you to rename the token if you don't have enough ERC20", async () => {
+            const [owner, user1] = await ethers.getSigners();
+
+            await lilDegens
+                .connect(owner)
+                .setLilDegenCoin(lilDegenCoin.address);
+
+
+            await lilDegens
+                .connect(user1)
+                .mint(1, { value: priceInWei })
+
+            await lilDegenCoin
+                .connect(owner)
+                .transfer(user1.address, 10);
+
+            let theBal = await lilDegenCoin.balanceOf(user1.address);
+
+            expect(theBal).to.equal(10);
+
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .changeName(0, "DudeMan McGoophy");
+                
+                expect.fail('This should fail because there are not enough tokens ');
+            } catch (error) {
+                expect(error.message)
+                    .to
+                    .equal(
+                        "VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'"
+                    );
+            }
+
 
         })
     });
+
+    describe("staking", function(){
+        it("should allow a user to stake their NFT and earn rewards", async () => {
+            const [owner, user1] = await ethers.getSigners();
+            const tokenId = 0;
+
+            await lilDegens
+                .connect(user1)
+                .mint(1, { value: priceInWei })
+
+            await lilDegens
+                .connect(user1)
+                .approve(lilDegenStake.address, tokenId);
+
+            await lilDegenStake
+                .connect(user1)
+                .stake(tokenId)
+
+            expect(await lilDegenStake.stakedBalance(user1.address).to.equal(tokenId));
+            expect(await lilDegenStake.lastRewardTime(tokenId)).to.be.closeTo(
+                Math.floor(Date.now() / 1000),
+                2
+            );
+
+            // //wait a day
+            // await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
+            // await ethers.provider.send("evm_mine");
+
+
+
+        });
+    })
 
     describe("management", function(){
         

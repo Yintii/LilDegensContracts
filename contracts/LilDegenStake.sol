@@ -13,7 +13,7 @@ contract LilDegenStake {
     mapping(address => uint256) public lastUpdateTime;
     mapping(address => uint256) public rewardsEarned;
 
-    uint256 public rewardRate = 100; // The reward rate is 100 reward tokens per day
+    uint256 public rewardRate = 7; // The reward rate is 7 tokens per day
     uint256 public totalStaked;
     uint256 public lastUpdate;
 
