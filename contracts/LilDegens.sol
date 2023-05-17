@@ -11,7 +11,6 @@ interface ILilDegenCoin {
     function updateReward(address _from, address _to) external;
     function transfer(address to, uint256 value) external returns (bool);
     function balanceOf(address who) external view returns (uint256);
-
 }
 
 contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
@@ -22,11 +21,14 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     uint256 public maxSupply = 6969;
     uint256 public immutable maxPerAddressDuringMint;
     uint256 public price;
+    uint256 public name_change_price = 150;
+    uint256 public bio_change_price = 200;
 
     mapping(address => uint256) public genBalance;
 
     struct LilDegenData {
         string name;
+        string bio;
     }
 
     modifier LilDegenOwner(uint256 tokenId) {
@@ -40,11 +42,11 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     ILilDegenCoin public LilDegenCoin;
 
 
-    uint256 public constant NAME_CHANGE_PRICE = 150;
 
     mapping(uint256 => LilDegenData) public lilDegenData;
 
     event NameChanged(uint256 LilDegenId, string LilDegenName);
+    event BioChanged(uint256 LilDegenId, string LilDegenBio);
 
     constructor(
         string memory name,
@@ -70,9 +72,26 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
             "New name is same as current name"
         );
 
-        LilDegenCoin.burn(msg.sender, NAME_CHANGE_PRICE);
+        LilDegenCoin.burn(msg.sender, name_change_price);
         lilDegenData[LilDegenId].name = newName;
         emit NameChanged(LilDegenId, newName);
+    }
+
+
+    function changeBio(uint256 LilDegenId, string memory newBio)
+        external
+        LilDegenOwner(LilDegenId)
+    {
+        bytes memory n = bytes(newBio);
+        require(n.length > 0 && n.length < 250, "Invalid name length");
+        require(
+            sha256(n) != sha256(bytes(lilDegenData[LilDegenId].bio)),
+            "New bio is same as current bio"
+        );
+
+        LilDegenCoin.burn(msg.sender, name_change_price);
+        lilDegenData[LilDegenId].bio = newBio;
+        emit BioChanged(LilDegenId, newBio);
     }
 
     function setLilDegenCoin(address LilDegenCoinAddress) external onlyOwner {

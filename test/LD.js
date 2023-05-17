@@ -344,8 +344,93 @@ describe("LilDegens Contract", function () {
         })
     });
 
+    describe("changeBio()", function(){
+        it("should not allow for you to change the bio if you don't have any ERC20", async () => {
+            const [owner, user1] = await ethers.getSigners();
+
+            await lilDegens
+                .connect(owner)
+                .setLilDegenCoin(lilDegenCoin.address);
+
+            await lilDegens
+                .connect(user1)
+                .mint(1, { value: priceInWei })
+
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .changeBio(0, "DudeMan McGoophy's bio hahahahahaha");
+
+                expect.fail("This was supposed to fail due to a lack of balance")
+            } catch (error) {
+                expect(error.message)
+                    .to
+                    .equal("VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
+            }   
+        })
+        it("should NOT allow for you to change the bio if you DON'T have enough ERC20", async () => {
+            const [owner, user1] = await ethers.getSigners();
+
+
+            await lilDegens
+                .connect(owner)
+                .setLilDegenCoin(lilDegenCoin.address);
+
+
+            await lilDegens
+                .connect(user1)
+                .mint(1, { value: priceInWei })
+
+            await lilDegenCoin
+                .connect(owner)
+                .transfer(user1.address, 180);
+
+            let theBal = await lilDegenCoin.balanceOf(user1.address);
+
+            expect(theBal).to.equal(180);
+
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .changeBio(0, "DudeMan McGoophy's bio broooo hahaha");
+
+            } catch (error) {
+                expect(error.message)
+                    .to
+                    .equal("VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
+            }
+
+        });
+        it("should allow for you to change the bio if you DO have enough ERC20", async () => {
+            const [owner, user1] = await ethers.getSigners();
+
+
+            await lilDegens
+                .connect(owner)
+                .setLilDegenCoin(lilDegenCoin.address);
+
+
+            await lilDegens
+                .connect(user1)
+                .mint(1, { value: priceInWei })
+
+            await lilDegenCoin
+                .connect(owner)
+                .transfer(user1.address, 200);
+
+            let theBal = await lilDegenCoin.balanceOf(user1.address);
+
+            expect(theBal).to.equal(200);
+
+            await lilDegens
+                .connect(user1)
+                .changeBio(0, "DudeMan McGoophy's bio broooo hahaha");
+
+        });
+    });
+
     describe("staking", function(){
-        it("should allow a user to stake their NFT and earn rewards", async () => {
+        it("should allow a user to stake their NFT and earn rewards and unstake afterwards", async () => {
             const [owner, user1] = await ethers.getSigners();
             const tokenId = 0;
 
@@ -361,20 +446,30 @@ describe("LilDegens Contract", function () {
                 .connect(user1)
                 .stake(tokenId)
 
-            expect(await lilDegenStake.stakedBalance(user1.address).to.equal(tokenId));
+            expect(await lilDegenStake.stakedBalance(user1.address)).to.equal(1);
             expect(await lilDegenStake.lastRewardTime(tokenId)).to.be.closeTo(
                 Math.floor(Date.now() / 1000),
-                2
+                200
             );
 
-            // //wait a day
-            // await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
-            // await ethers.provider.send("evm_mine");
+            //wait a day
+            await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
+            await ethers.provider.send("evm_mine");
+            
+            expect(await lilDegenStake.calculateRewards(user1.address)).to.equal(7);
 
+            await ethers.provider.send("evm_increaseTime", [(24 * 60 * 60) * 3]);
+            await ethers.provider.send("evm_mine");
 
+            expect(await lilDegenStake.calculateRewards(user1.address)).to.equal(28);
 
+            await lilDegenStake
+                    .connect(user1)
+                    .unstake(tokenId)
         });
-    })
+
+        
+    });
 
     describe("management", function(){
         
