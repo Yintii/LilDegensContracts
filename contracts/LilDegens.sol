@@ -5,7 +5,6 @@ import "./ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 
 interface ILilDegenCoin {
@@ -27,9 +26,6 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     uint256 public name_change_price = 150;
     uint256 public bio_change_price = 200;
 
-    bytes32 public immutable merkleRoot;
-    uint256 public immutable mintStartTime;
-    uint256 public immutable whiteListEndTime;
 
 
     mapping(address => uint256) public genBalance;
@@ -37,8 +33,8 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     struct LilDegenData {
         string name;
         string bio;
-	uint256 level;
-	uint256 xp;
+        uint256 level;
+        uint256 xp;
     }
 
     modifier LilDegenOwner(uint256 tokenId) {
@@ -62,34 +58,13 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         string memory name,
         string memory symbol,
         uint256 maxBatchSize_,
-        uint256 mintPrice_,
-	bytes32 merkleRoot_,
-	uint256 mintStartTime_,
-	uint256 whiteListEndTime_
+        uint256 mintPrice_
     )
         ERC721A(name, symbol, maxBatchSize_, maxSupply)
     {
         maxPerAddressDuringMint = maxBatchSize_;
         price = mintPrice_;
-	merkleRoot = merkleRoot_;
-	mintStartTime = mintStartTime_;
-	whiteListEndTime = whiteListEndTime_;
     }
-
-    modifier onlyWhitelisted(address walletAddress, bytes32[] memory merkleProof) {
-	require(isWhitelisted(walletAddress, merkleProof), "Not whitelisted");
-	_;
-    }
-
-    function isWhitelisted(address _address, bytes32[] memory proof)
-	public
-	view
-	returns (bool)
-    {
-	bytes32 node = keccak256(abi.encodePacked(_address));
-	return MerkleProof.verify(proof, merkleRoot, node);
-    }
-
 
     function changeName(uint256 LilDegenId, string memory newName)
         external
@@ -195,6 +170,14 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         price = newPrice;
     }
 
+    function setNameChangePrice(uint256 newPrice) public onlyOwner {
+        name_change_price = newPrice;
+    }
+
+    function setBioChangePrice(uint256 newPrice) public onlyOwner {
+        bio_change_price = newPrice;
+    }
+
     function setBaseURI(string memory uri) public onlyOwner {
         baseURI = uri;
     }
@@ -214,5 +197,4 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         }
         return codeSize > 0;
     }
-
 }

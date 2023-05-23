@@ -13,11 +13,11 @@ describe("LilDegens Contract", function () {
     beforeEach(async function () {
         LilDegens = await ethers.getContractFactory("LilDegens");
         lilDegens = await LilDegens.deploy(
-                                "LilDegens", 
-                                "LD",
-                                3,
-                                priceInWei
-                            );
+            "LilDegens",
+            "LD",
+            3,
+            priceInWei
+        );
 
         await lilDegens.deployed();
 
@@ -40,26 +40,26 @@ describe("LilDegens Contract", function () {
 
 
     describe("mint()", function () {
-        it("should allow a user to mint a LilDegen", async ()=>{
-            
+        it("should allow a user to mint a LilDegen", async () => {
+
             const [owner, user1] = await ethers.getSigners();
             const initialSupply = await lilDegens.totalSupply();
             const amountToMint = 1;
 
 
             await lilDegens
-                    .connect(user1)
-                    .mint(
-                        amountToMint, 
-                        { value: priceInWei.mul(amountToMint) }
-                    );
-            
+                .connect(user1)
+                .mint(
+                    amountToMint,
+                    { value: priceInWei.mul(amountToMint) }
+                );
+
 
             const finalSupply = await lilDegens.totalSupply();
             expect(finalSupply).to.equal(initialSupply + amountToMint);
         });
 
-        it("should allow for exactly 3 to be minted", async ()=>{
+        it("should allow for exactly 3 to be minted", async () => {
             const [owner, user1] = await ethers.getSigners();
             const initialSupply = await lilDegens.totalSupply();
             amountToMint = 3;
@@ -75,7 +75,7 @@ describe("LilDegens Contract", function () {
             expect(finalSupply).to.equal(initialSupply + amountToMint);
         });
 
-        it("should not allow for more than 3 to be minted", async ()=>{
+        it("should not allow for more than 3 to be minted", async () => {
             const [owner, user1] = await ethers.getSigners();
             const initialSupply = await lilDegens.totalSupply();
             amountToMint = 4;
@@ -106,12 +106,12 @@ describe("LilDegens Contract", function () {
 
             const amountToMint = 3;
 
-            let promises = minters.map( async (minter) => {
+            let promises = minters.map(async (minter) => {
                 await lilDegens.connect(minter)
-                                .mint(
-                                    amountToMint,
-                                    { value: priceInWei.mul(amountToMint)}
-                                );
+                    .mint(
+                        amountToMint,
+                        { value: priceInWei.mul(amountToMint) }
+                    );
             });
             await Promise.all(promises);
         })
@@ -135,11 +135,11 @@ describe("LilDegens Contract", function () {
         it("should fail to mint if the wrong amount of ether is sent", async () => {
             const [owner, user1] = await ethers.getSigners();
 
-            try{
+            try {
                 await lilDegens
-                        .connect(user1)
-                        .mint(1, {value: ethers.utils.parseEther('0.00169')});
-            }catch(error){
+                    .connect(user1)
+                    .mint(1, { value: ethers.utils.parseEther('0.00169') });
+            } catch (error) {
                 expect(error.message)
                     .to.equal(
                         "VM Exception while processing transaction: reverted with reason string 'Ether value sent is below the price'"
@@ -153,10 +153,10 @@ describe("LilDegens Contract", function () {
          * be a 6969
          */
         // it('should not allow minting once supply has run out', async () =>{
-    
+
         //     let [,user1, user2] = await ethers.getSigners();
         //     try {
-                
+
         //         await lilDegens
         //             .connect(user1)
         //             .mint(
@@ -170,7 +170,7 @@ describe("LilDegens Contract", function () {
         //                 1,
         //                 { value: priceInWei }
         //             );
-                    
+
 
         //         expect.fail('This should have failed, exceeding the max supply')
 
@@ -196,7 +196,7 @@ describe("LilDegens Contract", function () {
                     amountToGift,
                     user1.address
                 );
-                        
+
         })
         it('should NOT allow for the owner to gift more than 3 lildegens', async () => {
             const [owner, user1] = await ethers.getSigners();
@@ -222,17 +222,17 @@ describe("LilDegens Contract", function () {
         })
         it('should only allow for the owner to gift', async () => {
             const [owner, user1] = await ethers.getSigners();
-            try{
+            try {
                 await lilDegens
-                        .connect(user1)
-                        .gift(
-                            3,
-                            user1.address
-                        );
+                    .connect(user1)
+                    .gift(
+                        3,
+                        user1.address
+                    );
                 expect.fail(
                     "Only the owner should be able to gift"
                 );
-            } catch(error){
+            } catch (error) {
                 expect(error.message)
                     .to
                     .equal(
@@ -254,7 +254,7 @@ describe("LilDegens Contract", function () {
         });
     });
 
-    describe("changeName()", function(){
+    describe("changeName()", function () {
         it("should not allow for you to rename the token if you don't have any ERC20", async () => {
             const [owner, user1] = await ethers.getSigners();
 
@@ -264,8 +264,8 @@ describe("LilDegens Contract", function () {
 
             await lilDegens
                 .connect(user1)
-                .mint(1, {value: priceInWei})
-            
+                .mint(1, { value: priceInWei })
+
             try {
                 await lilDegens
                     .connect(user1)
@@ -291,11 +291,11 @@ describe("LilDegens Contract", function () {
             await lilDegens
                 .connect(user1)
                 .mint(1, { value: priceInWei })
-                
+
             await lilDegenCoin
                 .connect(owner)
                 .transfer(user1.address, 150);
-            
+
             let theBal = await lilDegenCoin.balanceOf(user1.address);
 
             expect(theBal).to.equal(150);
@@ -303,7 +303,7 @@ describe("LilDegens Contract", function () {
             await lilDegens
                 .connect(user1)
                 .changeName(0, "DudeMan McGoophy");
-            
+
         })
 
         it("should not allow for you to rename the token if you don't have enough ERC20", async () => {
@@ -330,7 +330,7 @@ describe("LilDegens Contract", function () {
                 await lilDegens
                     .connect(user1)
                     .changeName(0, "DudeMan McGoophy");
-                
+
                 expect.fail('This should fail because there are not enough tokens ');
             } catch (error) {
                 expect(error.message)
@@ -344,7 +344,7 @@ describe("LilDegens Contract", function () {
         })
     });
 
-    describe("changeBio()", function(){
+    describe("changeBio()", function () {
         it("should not allow for you to change the bio if you don't have any ERC20", async () => {
             const [owner, user1] = await ethers.getSigners();
 
@@ -366,7 +366,7 @@ describe("LilDegens Contract", function () {
                 expect(error.message)
                     .to
                     .equal("VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
-            }   
+            }
         })
         it("should NOT allow for you to change the bio if you DON'T have enough ERC20", async () => {
             const [owner, user1] = await ethers.getSigners();
@@ -429,7 +429,7 @@ describe("LilDegens Contract", function () {
         });
     });
 
-    describe("staking", function(){
+    describe("staking", function () {
         it("should allow a user to stake their NFT and earn rewards and unstake afterwards", async () => {
             const [owner, user1] = await ethers.getSigners();
             const tokenId = 0;
@@ -455,7 +455,7 @@ describe("LilDegens Contract", function () {
             //wait a day
             await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
             await ethers.provider.send("evm_mine");
-            
+
             expect(await lilDegenStake.calculateRewards(user1.address)).to.equal(7);
 
             await ethers.provider.send("evm_increaseTime", [(24 * 60 * 60) * 3]);
@@ -464,25 +464,25 @@ describe("LilDegens Contract", function () {
             expect(await lilDegenStake.calculateRewards(user1.address)).to.equal(28);
 
             await lilDegenStake
-                    .connect(user1)
-                    .unstake(tokenId)
+                .connect(user1)
+                .unstake(tokenId)
         });
 
-        
+
     });
 
-    describe("management", function(){
-        
+    describe("management", function () {
+
         it('should allow the owner to PAUSE and UNPAUSE the contract', async () => {
             const [owner] = await ethers.getSigners();
 
             await lilDegens
-                    .connect(owner)
-                    .pause()
+                .connect(owner)
+                .pause()
 
             await lilDegens
-                    .connect(owner)
-                    .unpause()
+                .connect(owner)
+                .unpause()
         })
 
         it('should NOT allow anyone besides the owner to PAUSE the contract', async () => {
@@ -527,7 +527,7 @@ describe("LilDegens Contract", function () {
             }
 
         })
-        
+
         it('should not allow anyone else besides the owner to withdraw funds', async () => {
             const [owner, user1, user2] = await ethers.getSigners();
 
@@ -544,19 +544,19 @@ describe("LilDegens Contract", function () {
                     amountToMint,
                     { value: priceInWei.mul(amountToMint) }
                 );
-3
+            3
 
             let user1Fail = false;
             let user2Fail = false;
 
-            try{
+            try {
                 await lilDegens
-                        .connect(user1)
-                        .withdraw()
-            }catch(error){
+                    .connect(user1)
+                    .withdraw()
+            } catch (error) {
                 user1Fail = true;
             }
-            
+
             try {
                 await lilDegens
                     .connect(user2)
@@ -565,14 +565,14 @@ describe("LilDegens Contract", function () {
                 user2Fail = true;
             }
 
-            if(user1Fail == false || user2Fail == false){
+            if (user1Fail == false || user2Fail == false) {
                 throw new Error('One of the users was able to withdraw funds!!!')
             }
 
             await lilDegens
-                    .connect(owner)
-                    .withdraw();
-        }) 
+                .connect(owner)
+                .withdraw();
+        })
 
         it('should not allow anyone else besides the owner to setBaseURI', async () => {
             const [owner, user1, user2] = await ethers.getSigners();
@@ -596,7 +596,7 @@ describe("LilDegens Contract", function () {
                 user2Fail = true;
             }
 
-            if(user1Fail == false || user2Fail == false){
+            if (user1Fail == false || user2Fail == false) {
                 throw new Error(
                     "Users were able to change the baseURI!!!"
                 );
@@ -647,6 +647,76 @@ describe("LilDegens Contract", function () {
                 );
             }
         })
+
+        it('should not allow anyone else besides the owner to setNameChangePrice', async () => {
+            const [owner, user1, user2] = await ethers.getSigners();
+
+            let user1Fail = false;
+            let user2Fail = false;
+
+            const correctPrice = ethers.utils.parseEther('0.0169');
+
+            await lilDegens
+                .connect(owner)
+                .setNameChangePrice(correctPrice);
+
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .setNameChangePrice(correctPrice);
+            } catch (error) {
+                user1Fail = true;
+            }
+
+            try {
+                await lilDegens
+                    .connect(user2)
+                    .setNameChangePrice(correctPrice);
+            } catch (error) {
+                user2Fail = true;
+            }
+
+            if (user1Fail == false || user2Fail == false) {
+                throw new Error(
+                    "Users were able to change the bio change price!!!"
+                );
+            }
+        });
+
+        it('should not allow anyone else besides the owner to setBioChangePrice', async () => {
+            const [owner, user1, user2] = await ethers.getSigners();
+
+            let user1Fail = false;
+            let user2Fail = false;
+
+            const correctPrice = ethers.utils.parseEther('0.0169');
+
+            await lilDegens
+                .connect(owner)
+                .setBioChangePrice(correctPrice);
+
+            try {
+                await lilDegens
+                    .connect(user1)
+                    .setBioChangePrice(correctPrice);
+            } catch (error) {
+                user1Fail = true;
+            }
+
+            try {
+                await lilDegens
+                    .connect(user2)
+                    .setBioChangePrice(correctPrice);
+            } catch (error) {
+                user2Fail = true;
+            }
+
+            if (user1Fail == false || user2Fail == false) {
+                throw new Error(
+                    "Users were able to change the bio change price!!!"
+                );
+            }
+        });
 
         it('should not allow anyone else besides the owner to setLilDegenCoin Address', async () => {
             const [owner, user1, user2] = await ethers.getSigners();
