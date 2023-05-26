@@ -1,7 +1,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const priceInWei = ethers.utils.parseEther('0.0169');
-
+//timestamp representing 5/26/2023 @ 4:20pm (PST)
+const startTime = new Date('May 26, 2023 16:20:00 GMT-0700');
+const timeStamp = Math.round(startTime.getTime() / 1000);
+console.log(timeStamp);
 describe("LilDegens Contract", function () {
     let LilDegens;
     let lilDegens;
@@ -16,7 +19,8 @@ describe("LilDegens Contract", function () {
             "LilDegens",
             "LD",
             3,
-            priceInWei
+            priceInWei,
+            timeStamp
         );
 
         await lilDegens.deployed();
@@ -34,7 +38,8 @@ describe("LilDegens Contract", function () {
 
         await lilDegenStake.deployed();
 
-
+        //simulate 4 hours passing on the blockchain
+        await ethers.provider.send("evm_increaseTime", [4 * 60 * 60]);
 
     });
 

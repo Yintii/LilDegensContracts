@@ -1,32 +1,43 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
+const {ethers} = require("hardhat");
+require('dotenv').config({path: '.env'});
+const priceInWei = ethers.utils.parseEther('0.0169');
+const startTime = new Date('May 26, 2023 16:20:00 GMT-0700');
+const timeStamp = Math.round(startTime.getTime() / 1000);
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const LilDegens = await ethers.getContractFactory("LilDegens");
+  const lilDegens = await LilDegens.deploy(
+                                            "LilDegens",
+                                            "LD",
+                                            3,
+                                            priceInWei,
+                                            timeStamp
+                                          );
 
-  const lockedAmount = hre.ethers.utils.parseEther("0.001");
+  await lilDegens.deployed();
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
 
-  await lock.deployed();
+    console.log("LilDegens deployed to:", lilDegens.address);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+    console.log("Sleeping.....");
+    await sleep(50000);
+
+    await hre.run("verify:verify", {
+      address: lilDegens.address,
+      constructorArguments: ["LilDegens", "LD", 3, priceInWei, timeStamp],
+    })
+
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  }
+);

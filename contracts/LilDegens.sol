@@ -26,6 +26,8 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     uint256 public name_change_price = 150;
     uint256 public bio_change_price = 200;
 
+    uint256 public startTimestamp;
+
 
 
     mapping(address => uint256) public genBalance;
@@ -58,12 +60,14 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
         string memory name,
         string memory symbol,
         uint256 maxBatchSize_,
-        uint256 mintPrice_
+        uint256 mintPrice_,
+        uint256 startTimestamp_
     )
         ERC721A(name, symbol, maxBatchSize_, maxSupply)
     {
         maxPerAddressDuringMint = maxBatchSize_;
         price = mintPrice_;
+        startTimestamp = startTimestamp_;
     }
 
     function changeName(uint256 LilDegenId, string memory newName)
@@ -104,8 +108,8 @@ contract LilDegens is ERC721A, Ownable, Pausable, ReentrancyGuard {
     }
 
     function mint(uint256 numberOfMints) external payable {
+        require(block.timestamp >= startTimestamp, "Sale has not started");
         require(totalSupply() + numberOfMints <= maxSupply);
-        //this line will make sure the user cannot buy anymore than {maxBatchSize_}
         require(
             numberMinted(msg.sender) + numberOfMints <= maxPerAddressDuringMint,
             "Limit number of mints to an amount set on contract configuration"
